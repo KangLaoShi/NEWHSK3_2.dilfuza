@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaqtga oid so'zlarning ko'p tilli qiyosiy jadvali</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+
+    <div id="app" class="min-h-screen p-3 md:p-8">
+        <div class="max-w-7xl mx-auto pb-12">
+            <!-- Header -->
+            <header class="mb-8 md:mb-12 text-center px-2">
+                <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 mb-4">
+                    <i data-lucide="languages" class="text-blue-600 w-8 h-8 md:w-10 md:h-10"></i>
+                    <h1 class="text-xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight">
+                        Vaqtga oid so'zlarning ko'p tilli qiyosiy jadvali
+                    </h1>
+                </div>
+                <h2 class="text-md md:text-xl font-semibold text-blue-600 mb-2 px-4">
+                    Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz
+                </h2>
+                <p class="text-slate-500 italic text-xs md:text-sm">Chinese (pinyin) • O'zbekcha • Русский</p>
+            </header>
+
+            <!-- Timeline Scales Container -->
+            <div id="timeline-container" class="space-y-10 md:space-y-16">
+                <!-- Content will be injected by JS -->
+            </div>
+
+            <!-- Final Footer -->
+            <footer class="mt-12 mb-8 text-center text-slate-400 text-xs md:text-sm border-t border-slate-200 pt-8 px-4 leading-relaxed">
+                <p>© 2026 Dilfuza Kāng lǎo shī (telegram@diffila)</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "";
+        let loadingId = null;
+
+        const timeData = [
+            {
+                category: '日期 (Kunlar / Дни)',
+                items: [
+                    { label: '前天', pinyin: 'qiántiān', uz: 'oldingi kun', ru: 'позавчера', offset: -2, type: 'past' },
+                    { label: '昨天', pinyin: 'zuótiān', uz: 'kecha', ru: 'вчера', offset: -1, type: 'past' },
+                    { label: '今天', pinyin: 'jīntiān', uz: 'bugun', ru: 'сегодня', offset: 0, type: 'present' },
+                    { label: '明天', pinyin: 'míngtiān', uz: 'ertaga', ru: 'завтра', offset: 1, type: 'future' },
+                    { label: '后天', pinyin: 'hòutiān', uz: 'indin', ru: 'послезавтра', offset: 2, type: 'future' },
+                ]
+            },
+            {
+                category: '星期 (Haftalar / Недели)',
+                items: [
+                    { label: '上上个星期', pinyin: 'shàng shàng gè xīngqī', uz: "o'tgan haftadan oldin", ru: 'позапрошлая неделя', offset: -2, type: 'past' },
+                    { label: '上个星期', pinyin: 'shàng gè xīngqī', uz: "o'tgan hafta", ru: 'на прошлой неделе', offset: -1, type: 'past' },
+                    { label: '这个星期', pinyin: 'zhège xīngqī', uz: 'shu hafta', ru: 'на этой неделе', offset: 0, type: 'present' },
+                    { label: '下个星期', pinyin: 'xià gè xīngqī', uz: 'kelasi hafta', ru: 'на следующей неделе', offset: 1, type: 'future' },
+                    { label: '下下个星期', pinyin: 'xià xià gè xīngqī', uz: 'kelasi haftadan keyin', ru: 'через неделю', offset: 2, type: 'future' },
+                ]
+            },
+            {
+                category: '月份 (Oylar / Месяцы)',
+                items: [
+                    { label: '上上个月', pinyin: 'shàng shàng gè yuè', uz: "o'tgan oydan oldin", ru: 'позапрошлый месяц', offset: -2, type: 'past' },
+                    { label: '上个月', pinyin: 'shàng gè yuè', uz: "o'tgan oy", ru: 'в прошлом месяце', offset: -1, type: 'past' },
+                    { label: '这个月', pinyin: 'zhège yuè', uz: 'shu oy', ru: 'в этом месяце', offset: 0, type: 'present' },
+                    { label: '下个月', pinyin: 'xià gè yuè', uz: 'kelasi oy', ru: 'в следующем месяце', offset: 1, type: 'future' },
+                    { label: '下下个月', pinyin: 'xià xià gè yuè', uz: 'kelasi oydan keyin', ru: 'через месяц', offset: 2, type: 'future' },
+                ]
+            },
+            {
+                category: '年份 (Yillar / Годы)',
+                items: [
+                    { label: '前年', pinyin: 'qiánnián', uz: 'ikki yil oldin', ru: 'позапрошлый год', offset: -2, type: 'past' },
+                    { label: '去年', pinyin: 'qùnián', uz: "o'tgan yili", ru: 'прошлый год', offset: -1, type: 'past' },
+                    { label: '今年', pinyin: 'jīnnián', uz: 'shu yil', ru: 'этот год', offset: 0, type: 'present' },
+                    { label: '明年', pinyin: 'míngnián', uz: 'kelasi yili', ru: 'следующий год', offset: 1, type: 'future' },
+                    { label: '后年', pinyin: 'hòunián', uz: 'ikki yildan keyin', ru: 'послеследующий год', offset: 2, type: 'future' },
+                ]
+            }
+        ];
+
+        function pcmToWav(pcmData, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+            const view = new DataView(buffer);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 32 + pcmData.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmData.length * 2, true);
+            for (let i = 0; i < pcmData.length; i++) {
+                view.setInt16(44 + i * 2, pcmData[i], true);
+            }
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        async function speak(text, id) {
+            if (loadingId) return;
+            loadingId = id;
+            updateUI();
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                systemInstruction: { parts: [{ text: "你是一个专业的中文老师。请只读出用户提供的中文词汇，不要说任何多余的话。保持语调清晰、自然。" }] },
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const audioData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+
+                if (audioData && audioData.data) {
+                    const binaryString = atob(audioData.data);
+                    const len = binaryString.length;
+                    const bytes = new Int16Array(len / 2);
+                    for (let i = 0; i < len; i += 2) {
+                        bytes[i / 2] = (binaryString.charCodeAt(i + 1) << 8) | binaryString.charCodeAt(i);
+                    }
+                    const sampleRateMatch = audioData.mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
+
+                    const wavBlob = pcmToWav(bytes, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.onended = () => {
+                        loadingId = null;
+                        updateUI();
+                        URL.revokeObjectURL(audioUrl);
+                    };
+                    audio.onerror = () => {
+                        loadingId = null;
+                        updateUI();
+                    };
+                    await audio.play();
+                } else {
+                    loadingId = null;
+                    updateUI();
+                }
+            } catch (error) {
+                console.error(error);
+                loadingId = null;
+                updateUI();
+            }
+        }
+
+        function getTypeStyles(type) {
+            switch (type) {
+                case 'past': return 'bg-slate-50 text-slate-700 border-slate-200';
+                case 'present': return 'bg-blue-600 text-white border-blue-700 shadow-lg md:scale-110 z-20';
+                case 'future': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                default: return 'bg-white text-slate-800 border-slate-200';
+            }
+        }
+
+        function updateUI() {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = timeData.map((section, sectionIdx) => `
+                <div class="relative bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2 md:gap-3 mb-6 md:mb-10 border-b border-slate-100 pb-3 md:pb-4">
+                        <div class="p-1.5 md:p-2 bg-blue-50 rounded-lg">
+                            <i data-lucide="clock" class="text-blue-600 w-5 h-5"></i>
+                        </div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-700">${section.category}</h2>
+                    </div>
+
+                    <div class="absolute top-[175px] left-10 right-10 h-0.5 bg-slate-100 -z-0 hidden md:block"></div>
+
+                    <div class="flex flex-col md:flex-row md:justify-around items-stretch md:items-start gap-4 md:gap-2 relative z-10 px-1">
+                        ${section.items.map((item, i) => {
+                            const id = `${sectionIdx}-${i}`;
+                            const isLoading = loadingId === id;
+                            const isPresent = item.type === 'present';
+                            
+                            return `
+                            <div class="flex flex-row md:flex-col items-center group w-full md:w-48 gap-3 md:gap-0">
+                                <div class="md:hidden w-10 flex-shrink-0 text-center">
+                                    <span class="text-[10px] font-mono font-bold ${isPresent ? 'text-blue-600' : 'text-slate-400'}">
+                                        ${item.offset === 0 ? 'NOW' : (item.offset > 0 ? '+' + item.offset : item.offset)}
+                                    </span>
+                                </div>
+
+                                <div class="flex-grow md:w-full py-4 md:py-5 px-3 rounded-xl md:rounded-2xl border flex flex-col items-center transition-all duration-300 ${getTypeStyles(item.type)}">
+                                    <div class="flex items-center gap-2 mb-0.5">
+                                        <span class="text-xl md:text-2xl font-bold">${item.label}</span>
+                                        <button 
+                                            onclick="speak('${item.label}', '${id}')"
+                                            ${loadingId !== null ? 'disabled' : ''}
+                                            class="p-2 rounded-full transition-all ${isPresent ? 'bg-white/10 text-yellow-200' : 'bg-slate-100 text-blue-500'} ${loadingId !== null && !isLoading ? 'opacity-30' : 'opacity-100'}"
+                                        >
+                                            ${isLoading ? '<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>' : '<i data-lucide="volume-2" class="w-4 h-4"></i>'}
+                                        </button>
+                                    </div>
+                                    <span class="text-[11px] font-bold tracking-tight mb-2 text-center lowercase ${isPresent ? 'text-yellow-300' : 'text-amber-600'}">
+                                        ${item.pinyin}
+                                    </span>
+                                    <div class="w-8 h-px mb-2 ${isPresent ? 'bg-white/30' : 'bg-slate-200'}"></div>
+                                    <span class="text-[13px] md:text-[14px] font-semibold text-center mb-1 leading-tight flex items-center ${isPresent ? 'text-white' : 'text-blue-800'}">
+                                        ${item.uz}
+                                    </span>
+                                    <span class="text-[10px] md:text-[11px] text-center opacity-80 leading-tight ${isPresent ? 'text-blue-50' : 'text-slate-500 italic'}">
+                                        ${item.ru}
+                                    </span>
+                                </div>
+
+                                <span class="hidden md:inline-block mt-3 text-[10px] font-mono px-2 py-0.5 rounded-full ${isPresent ? 'bg-blue-100 text-blue-600 font-bold' : 'bg-slate-100 text-slate-400'}">
+                                    ${item.offset === 0 ? 'CURRENT' : (item.offset > 0 ? '+' + item.offset : item.offset)}
+                                </span>
+                            </div>
+                        `;}).join('')}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', updateUI);
+    </script>
+</body>
+</html>
